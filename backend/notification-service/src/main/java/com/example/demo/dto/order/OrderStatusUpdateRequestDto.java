@@ -1,6 +1,7 @@
 package com.example.demo.dto.order;
 
-import jakarta.validation.constraints.NotBlank;
+import com.example.demo.model.OrderStatus;
+import jakarta.validation.constraints.NotNull;
 
-public record OrderStatusUpdateRequestDto(@NotBlank String status) {
+public record OrderStatusUpdateRequestDto(@NotNull OrderStatus status) {
 }

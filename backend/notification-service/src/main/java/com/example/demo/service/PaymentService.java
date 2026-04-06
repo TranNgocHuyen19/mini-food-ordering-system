@@ -1,10 +1,10 @@
 package com.example.demo.service;
 
 import com.example.demo.client.OrderServiceClient;
-import com.example.demo.dto.order.OrderStatusUpdateRequestDto;
 import com.example.demo.dto.payment.PaymentRequestDto;
 import com.example.demo.dto.payment.PaymentResponseDto;
 import com.example.demo.model.Payment;
+import com.example.demo.model.OrderStatus;
 import com.example.demo.model.PaymentStatus;
 import com.example.demo.repository.PaymentRepository;
 import java.util.logging.Logger;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PaymentService {
-	private static final String ORDER_STATUS_PAID = "PAID";
 	private static final Logger logger = Logger.getLogger(PaymentService.class.getName());
 
 	private final PaymentRepository paymentRepository;
@@ -37,7 +36,7 @@ public class PaymentService {
 		payment = paymentRepository.save(payment);
 
 		try {
-			orderServiceClient.updateOrderStatus(request.orderId(), new OrderStatusUpdateRequestDto(ORDER_STATUS_PAID));
+			orderServiceClient.updateOrderStatus(request.orderId(), OrderStatus.COMPLETED);
 		} catch (Exception exception) {
 			logger.warning(() -> String.format(
 					"Failed to update order status for order #%d: %s",
