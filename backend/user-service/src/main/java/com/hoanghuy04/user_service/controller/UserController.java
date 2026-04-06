@@ -38,4 +38,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         return ResponseEntity.ok(ApiResponse.success("Get current user successful", userService.getCurrentUser()));
     }
+
+    @GetMapping("/validate")
+    public ResponseEntity<ApiResponse<Boolean>> validateToken() {
+        // If the request reaches here, it means the JWT token in the header was valid
+        // thanks to the JwtAuthenticationFilter.
+        return ResponseEntity.ok(ApiResponse.success("Token is valid", true));
+    }
 }
