@@ -5,7 +5,9 @@ import com.hoanghuy04.user_service.dto.AuthResponse;
 import com.hoanghuy04.user_service.dto.LoginRequest;
 import com.hoanghuy04.user_service.dto.RegisterRequest;
 import com.hoanghuy04.user_service.dto.UserResponse;
+import com.hoanghuy04.user_service.util.CookieUtil;
 import com.hoanghuy04.user_service.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +20,22 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final CookieUtil cookieUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Register successful", userService.register(request)));
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request,
+            HttpServletResponse response) {
+        AuthResponse authResponse = userService.register(request);
+        cookieUtil.createCookie(response, "jwtToken", authResponse.getToken(), 86400);
+        return ResponseEntity.ok(ApiResponse.success("Register successful", authResponse));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Login successful", userService.login(request)));
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request,
+            HttpServletResponse response) {
+        AuthResponse authResponse = userService.login(request);
+        cookieUtil.createCookie(response, "jwtToken", authResponse.getToken(), 86400);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", authResponse));
     }
 
     @GetMapping
@@ -41,8 +50,6 @@ public class UserController {
 
     @GetMapping("/validate")
     public ResponseEntity<ApiResponse<Boolean>> validateToken() {
-        // If the request reaches here, it means the JWT token in the header was valid
-        // thanks to the JwtAuthenticationFilter.
         return ResponseEntity.ok(ApiResponse.success("Token is valid", true));
     }
 }
