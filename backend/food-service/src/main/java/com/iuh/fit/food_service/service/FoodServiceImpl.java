@@ -19,6 +19,11 @@ public class FoodServiceImpl implements FoodService {
     }
     
     @Override
+    public List<Food> getFoodsByCategory(String category) {
+        return foodRepository.findByCategory(category);
+    }
+    
+    @Override
     public Optional<Food> getFoodById(Long id) {
         return foodRepository.findById(id);
     }
@@ -43,6 +48,9 @@ public class FoodServiceImpl implements FoodService {
                 }
                 if (food.getImageUrl() != null) {
                     existingFood.setImageUrl(food.getImageUrl());
+                }
+                if (food.getCategory() != null) {
+                    existingFood.setCategory(food.getCategory());
                 }
                 if (food.getQuantity() != null) {
                     existingFood.setQuantity(food.getQuantity());

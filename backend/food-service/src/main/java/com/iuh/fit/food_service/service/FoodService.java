@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public interface FoodService {
     List<Food> getAllFoods();
+    List<Food> getFoodsByCategory(String category);
     Optional<Food> getFoodById(Long id);
     Food createFood(Food food);
     Food updateFood(Long id, Food food);

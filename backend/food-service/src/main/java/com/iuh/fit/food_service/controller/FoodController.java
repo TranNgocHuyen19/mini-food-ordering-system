@@ -25,6 +25,15 @@ public class FoodController {
         return ResponseEntity.ok(ApiResponse.success("Danh sách tất cả món ăn", foods));
     }
     
+    @GetMapping("/category/{category}")
+    public ResponseEntity<ApiResponse<List<Food>>> getFoodsByCategory(@PathVariable String category) {
+        List<Food> foods = foodService.getFoodsByCategory(category);
+        if (foods.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("Danh sách món ăn theo danh mục", foods));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Danh sách món ăn theo danh mục: " + category, foods));
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Food>> getFoodById(@PathVariable Long id) {
         return foodService.getFoodById(id)
