@@ -1,5 +1,6 @@
 package com.hoanghuy04.user_service.controller;
 
+import com.hoanghuy04.user_service.dto.ApiResponse;
 import com.hoanghuy04.user_service.dto.AuthResponse;
 import com.hoanghuy04.user_service.dto.LoginRequest;
 import com.hoanghuy04.user_service.dto.RegisterRequest;
@@ -19,22 +20,22 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(userService.register(request));
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Register successful", userService.register(request)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Login successful", userService.login(request)));
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        return ResponseEntity.ok(ApiResponse.success("Get all users successful", userService.getAllUsers()));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser() {
-        return ResponseEntity.ok(userService.getCurrentUser());
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+        return ResponseEntity.ok(ApiResponse.success("Get current user successful", userService.getCurrentUser()));
     }
 }
