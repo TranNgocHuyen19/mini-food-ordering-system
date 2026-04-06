@@ -1,7 +1,7 @@
-package com.daothimylinh.demo.config.security;
+package com.example.demo.config.security;
 
-import com.daothimylinh.demo.dto.ApiResponse;
-import com.daothimylinh.demo.service.UserClient;
+import com.example.demo.client.UserServiceClient;
+import com.example.demo.dto.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,19 +23,20 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 	private static final String AUTHORIZATION = "Authorization";
 	private static final String BEARER_PREFIX = "Bearer ";
 
-	private final UserClient userClient;
+	private final UserServiceClient userServiceClient;
 	private final ObjectMapper objectMapper;
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-	public TokenAuthenticationFilter(UserClient userClient, ObjectMapper objectMapper) {
-		this.userClient = userClient;
+	public TokenAuthenticationFilter(UserServiceClient userServiceClient, ObjectMapper objectMapper) {
+		this.userServiceClient = userServiceClient;
 		this.objectMapper = objectMapper;
 	}
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
 		String servletPath = request.getServletPath();
-		return pathMatcher.match("/h2-console/**", servletPath)
+		return HttpMethod.OPTIONS.matches(request.getMethod())
+				|| pathMatcher.match("/h2-console/**", servletPath)
 				|| pathMatcher.match("/actuator/health", servletPath)
 				|| pathMatcher.match("/error", servletPath);
 	}
@@ -48,15 +50,18 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		boolean tokenValid;
+		ApiResponse<Boolean> tokenValidationResponse;
 		try {
-			tokenValid = userClient.validateToken(authorizationHeader);
+			tokenValidationResponse = userServiceClient.validateToken();
 		} catch (Exception exception) {
 			writeUnauthorized(response, "Unable to validate token");
 			return;
 		}
 
-		if (!tokenValid) {
+		if (tokenValidationResponse == null
+				|| !tokenValidationResponse.success()
+				|| tokenValidationResponse.data() == null
+				|| !tokenValidationResponse.data()) {
 			writeUnauthorized(response, "Token is invalid");
 			return;
 		}
