@@ -27,6 +27,9 @@ public class Food {
     @Column
     private String imageUrl;
     
+    @Column
+    private String category;
+    
     @Column(nullable = false)
     private Integer quantity = 0;
 }
