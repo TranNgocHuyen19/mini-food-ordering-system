@@ -53,10 +53,10 @@ export const Navbar = () => {
             </div>
           ) : (
             <div className="flex items-center gap-3 border-l pl-3 ml-1">
-              <div className="flex items-center gap-2 p-1.5 px-3 bg-muted/50 rounded-full">
+              <Link to="/profile" className="flex items-center gap-2 p-1.5 px-3 bg-muted/50 rounded-full hover:bg-muted transition-colors">
                 <User size={16} className="text-primary" />
                 <span className="text-xs font-black uppercase tracking-widest">{user.username}</span>
-              </div>
+              </Link>
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-destructive transition-colors" onClick={handleLogout} title="Logout">
                 <LogOut size={16} />
               </Button>

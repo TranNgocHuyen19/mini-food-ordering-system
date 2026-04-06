@@ -16,35 +16,40 @@ export const Menu = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [availableCategories, setAvailableCategories] = useState<string[]>(['All']);
   const { addToCart } = useCart();
 
-  useEffect(() => {
-    const fetchFoods = async () => {
-      try {
-        const data = await foodService.getAllFoods();
-        setFoods(data);
-      } catch (error: any) {
-        toast.error('Failed to load menu items: ' + (error.message || 'Please try again later.'));
-        // Placeholder data if API fails or isn't ready
-        setFoods([
-          { id: '1', name: 'Classic Burger', description: 'Juicy beef patty with fresh lettuce and tomato', price: 12.99, imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500', category: 'Burger' },
-          { id: '2', name: 'Pepperoni Pizza', description: 'Homemade dough, spicy pepperoni, and mozzarella', price: 15.49, imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500', category: 'Pizza' },
-          { id: '3', name: 'Caesar Salad', description: 'Crispy romaine lettuce, croutons, and Caesar dressing', price: 9.99, imageUrl: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500', category: 'Salad' },
-          { id: '4', name: 'Pasta Carbonara', description: 'Creamy pasta with bacon and parmesan cheese', price: 14.99, imageUrl: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500', category: 'Pasta' },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFoods();
-  }, []);
+  const fetchFoods = async (category: string) => {
+    setLoading(true);
+    try {
+      const response = category === 'All' 
+        ? await foodService.getAllFoods()
+        : await foodService.getFoodsByCategory(category);
 
-  const categories = ['All', ...new Set(foods.map((f) => f.category))];
+      if (response.success && response.data) {
+        setFoods(response.data);
+        
+        // Update available categories ONLY if we're on 'All' to get the full list
+        if (category === 'All') {
+          const cats = ['All', ...new Set(response.data.map(f => f.category).filter(Boolean) as string[])];
+          setAvailableCategories(cats);
+        }
+      } else {
+        throw new Error(response.message || 'Unknown error');
+      }
+    } catch (error: any) {
+      toast.error('Failed to load menu items: ' + (error.message || 'Please try again later.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFoods(selectedCategory);
+  }, [selectedCategory]);
 
   const filteredFoods = foods.filter((food) => {
-    const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || food.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return food.name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (
@@ -78,14 +83,14 @@ export const Menu = () => {
         <div className="relative w-full md:w-96 group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
           <Input
-            placeholder="Search our menu..."
+            placeholder="Search our delicious menu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 h-11 bg-muted/30 border-none group-focus-within:bg-background transition-all"
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-          {categories.map((category) => (
+          {availableCategories.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? 'default' : 'ghost'}
@@ -123,33 +128,46 @@ export const Menu = () => {
                 <Card className="group border-none bg-card hover:bg-accent/40 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl rounded-2xl h-full flex flex-col">
                   <div className="relative h-56 overflow-hidden">
                     <img
-                      src={food.imageUrl}
+                      src={food.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'}
                       alt={food.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute top-4 left-4">
+                    <div className="absolute top-4 left-4 z-20">
                       <Badge className="bg-background/80 backdrop-blur-md text-foreground border-none px-3 py-1 text-xs font-semibold rounded-full shadow-sm">
-                        {food.category}
+                        {food.category || 'General'}
                       </Badge>
                     </div>
+                    {food.quantity <= 0 && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-30">
+                        <Badge variant="destructive" className="text-lg font-black px-6 py-2 rounded-xl shadow-2xl -rotate-12 border-4 border-white/20">
+                          HẾT HÀNG
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   <CardHeader className="pt-6">
                     <CardTitle className="text-xl font-bold tracking-tight">{food.name}</CardTitle>
                     <CardDescription className="line-clamp-2 text-sm leading-relaxed">{food.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex-grow">
-                    <span className="text-2xl font-black text-primary">${food.price.toFixed(2)}</span>
+                  <CardContent className="flex-grow space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black text-primary">${food.price.toFixed(2)}</span>
+                      <Badge variant={food.quantity > 0 ? "secondary" : "destructive"} className="rounded-full">
+                        {food.quantity > 0 ? `Stock: ${food.quantity}` : 'Out of Stock'}
+                      </Badge>
+                    </div>
                   </CardContent>
                   <CardFooter className="pt-2 pb-6 px-6">
                     <Button 
                       className="w-full rounded-xl h-11 font-bold tracking-wide shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+                      disabled={food.quantity <= 0}
                       onClick={() => {
                         addToCart(food);
                         toast.success(`${food.name} added to cart`);
                       }}
                     >
                       <ShoppingCart className="mr-2" size={18} />
-                      Add to Cart
+                      {food.quantity > 0 ? 'Add to Cart' : 'Unavailable'}
                     </Button>
                   </CardFooter>
                 </Card>

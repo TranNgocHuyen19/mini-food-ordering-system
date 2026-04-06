@@ -9,20 +9,37 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { toast } from 'sonner';
 
 export const Register = () => {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    // Backend validation requires special chars and min length 9
+    const specialCharRegex = /.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?].*/;
+    if (password.length < 9) {
+      toast.error('Password must be at least 9 characters long');
+      return;
+    }
+    if (!specialCharRegex.test(password)) {
+      toast.error('Password must contain at least one special character');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await register(username, email, password);
-      toast.success('Registration successful! Please login.');
-      navigate('/login');
+      await register({ email, password, confirmPassword });
+      toast.success('Registration successful! Welcome to Mini Food.');
+      navigate('/');
     } catch (error: any) {
       toast.error('Registration failed: ' + (error.response?.data?.message || error.message));
     } finally {
@@ -51,26 +68,15 @@ export const Register = () => {
           <CardContent className="grid gap-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="bg-background/80 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
-                  placeholder="johndoe"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-background/80 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                  placeholder="name@example.com"
                 />
               </div>
               <div className="space-y-2">
@@ -81,6 +87,18 @@ export const Register = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="bg-background/80 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                  placeholder="Min. 9 characters + special char"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="bg-background/80 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
                 />
               </div>

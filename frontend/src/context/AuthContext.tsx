@@ -1,39 +1,62 @@
-import { createContext, useContext, useState } from 'react';
-import type { User } from '../types';
+import React, { createContext, useContext, useState } from 'react';
+import type { UserResponse, LoginRequest, RegisterRequest } from '../types';
 import { authService } from '../services';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserResponse | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  login: (request: LoginRequest) => Promise<void>;
+  register: (request: RegisterRequest) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<UserResponse | null>(() => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [loading] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    const data = await authService.login(email, password);
-    setUser(data.user);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+  const login = async (request: LoginRequest) => {
+    const response = await authService.login(request);
+    if (response.success) {
+      localStorage.setItem('token', response.data.token);
+      const userResponse = await authService.getMe();
+      if (userResponse.success) {
+        setUser(userResponse.data);
+        localStorage.setItem('user', JSON.stringify(userResponse.data));
+      }
+    } else {
+        throw new Error(response.message);
+    }
   };
 
-  const register = async (username: string, email: string, password: string) => {
-    await authService.register(username, email, password);
+  const register = async (request: RegisterRequest) => {
+    const response = await authService.register(request);
+    if (response.success && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      const userResponse = await authService.getMe();
+      if (userResponse.success) {
+        setUser(userResponse.data);
+        localStorage.setItem('user', JSON.stringify(userResponse.data));
+      }
+    } else if (!response.success) {
+      throw new Error(response.message);
+    }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
   };
 
   return (

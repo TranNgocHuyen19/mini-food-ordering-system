@@ -31,11 +31,11 @@ export const Checkout = () => {
     setIsLoading(true);
     try {
       await orderService.createOrder({
-        userId: user?.id,
-        items: cart,
-        totalAmount: totalPrice,
-        address,
-        phone,
+        userId: Number(user?.id),
+        items: cart.map(item => ({
+          foodId: Number(item.food.id),
+          quantity: item.quantity
+        }))
       });
       setIsOrdered(true);
       clearCart();

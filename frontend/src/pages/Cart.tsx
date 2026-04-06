@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 export const Cart = () => {
-  const { cart, removeFromCart, updateQuantity, totalPrice, totalItems } = useCart();
+  const { cart, removeFromCart, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -51,7 +51,13 @@ export const Cart = () => {
       <div className="lg:col-span-2 space-y-8">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-black tracking-tight">Your Cart <span className="text-muted-foreground font-medium text-xl ml-2">({totalItems} items)</span></h1>
-          <Button variant="ghost" className="text-destructive font-semibold hover:bg-destructive/10">Clear Cart</Button>
+          <Button 
+            variant="ghost" 
+            className="text-destructive font-semibold hover:bg-destructive/10"
+            onClick={clearCart}
+          >
+            Clear Cart
+          </Button>
         </div>
 
         <ScrollArea className="h-full rounded-2xl border-none">

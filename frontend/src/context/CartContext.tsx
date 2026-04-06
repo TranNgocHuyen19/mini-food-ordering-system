@@ -4,8 +4,8 @@ import type { CartItem, Food } from '../types';
 interface CartContextType {
   cart: CartItem[];
   addToCart: (food: Food, quantity?: number) => void;
-  removeFromCart: (foodId: string) => void;
-  updateQuantity: (foodId: string, quantity: number) => void;
+  removeFromCart: (foodId: string | number) => void;
+  updateQuantity: (foodId: string | number, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -35,11 +35,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const removeFromCart = (foodId: string) => {
+  const removeFromCart = (foodId: string | number) => {
     setCart((prev) => prev.filter((item) => item.food.id !== foodId));
   };
 
-  const updateQuantity = (foodId: string, quantity: number) => {
+  const updateQuantity = (foodId: string | number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(foodId);
       return;

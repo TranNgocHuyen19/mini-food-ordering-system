@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login({ email, password });
       // Success toast is handled here
       toast.success('Login successful!');
       navigate('/');
@@ -39,7 +39,7 @@ export const Login = () => {
         className="w-full max-w-md"
       >
         <Card className="border-none bg-background/50 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent pointer-none" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent pointer-events-none" />
           <CardHeader className="space-y-1 pt-8 text-center">
             <CardTitle className="text-3xl font-bold tracking-tight">Welcome back</CardTitle>
             <CardDescription className="text-muted-foreground">
