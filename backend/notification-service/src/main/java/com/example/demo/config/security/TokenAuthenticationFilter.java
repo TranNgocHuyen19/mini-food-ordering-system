@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,7 +35,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
 		String servletPath = request.getServletPath();
-		return pathMatcher.match("/h2-console/**", servletPath)
+		return HttpMethod.OPTIONS.matches(request.getMethod())
+				|| pathMatcher.match("/h2-console/**", servletPath)
 				|| pathMatcher.match("/actuator/health", servletPath)
 				|| pathMatcher.match("/error", servletPath);
 	}
