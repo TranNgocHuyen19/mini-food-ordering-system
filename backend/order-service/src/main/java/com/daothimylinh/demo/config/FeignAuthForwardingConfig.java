@@ -1,9 +1,9 @@
-package com.example.demo.config;
+package com.daothimylinh.demo.config;
 
-import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -12,18 +12,20 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class FeignAuthForwardingConfig {
 
 	@Bean
-	public RequestInterceptor bearerTokenForwardingInterceptor() {
-		return requestTemplate -> {
+	public ClientHttpRequestInterceptor bearerTokenForwardingInterceptor() {
+		return (request, body, execution) -> {
 			RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
 			if (!(requestAttributes instanceof ServletRequestAttributes servletAttributes)) {
-				return;
+				return execution.execute(request, body);
 			}
 
-			HttpServletRequest request = servletAttributes.getRequest();
-			String authorizationHeader = request.getHeader("Authorization");
+			HttpServletRequest servletRequest = servletAttributes.getRequest();
+			String authorizationHeader = servletRequest.getHeader("Authorization");
 			if (authorizationHeader != null && !authorizationHeader.isBlank()) {
-				requestTemplate.header("Authorization", authorizationHeader);
+				request.getHeaders().set("Authorization", authorizationHeader);
 			}
+
+			return execution.execute(request, body);
 		};
 	}
 }

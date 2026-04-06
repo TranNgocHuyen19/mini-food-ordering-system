@@ -1,7 +1,7 @@
-package com.example.demo.config.security;
+package com.daothimylinh.demo.config.security;
 
-import com.example.demo.client.UserServiceClient;
-import com.example.demo.dto.ApiResponse;
+import com.daothimylinh.demo.dto.ApiResponse;
+import com.daothimylinh.demo.service.UserClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,12 +23,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 	private static final String AUTHORIZATION = "Authorization";
 	private static final String BEARER_PREFIX = "Bearer ";
 
-	private final UserServiceClient userServiceClient;
+	private final UserClient userClient;
 	private final ObjectMapper objectMapper;
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-	public TokenAuthenticationFilter(UserServiceClient userServiceClient, ObjectMapper objectMapper) {
-		this.userServiceClient = userServiceClient;
+	public TokenAuthenticationFilter(UserClient userClient, ObjectMapper objectMapper) {
+		this.userClient = userClient;
 		this.objectMapper = objectMapper;
 	}
 
@@ -50,18 +50,15 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		ApiResponse<Boolean> tokenValidationResponse;
+		boolean validToken;
 		try {
-			tokenValidationResponse = userServiceClient.validateToken();
+			validToken = userClient.validateToken(authorizationHeader);
 		} catch (Exception exception) {
 			writeUnauthorized(response, "Unable to validate token");
 			return;
 		}
 
-		if (tokenValidationResponse == null
-				|| !tokenValidationResponse.success()
-				|| tokenValidationResponse.data() == null
-				|| !tokenValidationResponse.data()) {
+		if (!validToken) {
 			writeUnauthorized(response, "Token is invalid");
 			return;
 		}
