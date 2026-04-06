@@ -52,4 +52,10 @@ public class UserController {
     public ResponseEntity<ApiResponse<Boolean>> validateToken() {
         return ResponseEntity.ok(ApiResponse.success("Token is valid", true));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
+        cookieUtil.clearCookie(response, "jwtToken");
+        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+    }
 }
