@@ -4,6 +4,7 @@ import com.daothimylinh.demo.model.Order;
 import com.daothimylinh.demo.model.OrderItem;
 import com.daothimylinh.demo.repository.OrderRepository;
 import com.daothimylinh.demo.model.OrderStatus;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,15 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "quantity must be greater than 0");
             }
 
-            Map<String, Object> food = foodClient.getFoodById(item.getFoodId());
+            Map<String, Object> food;
+            try {
+                food = foodClient.getFoodById(item.getFoodId());
+            } catch (FeignException.NotFound ex) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Food not found: " + item.getFoodId());
+            } catch (FeignException ex) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Food Service unavailable");
+            }
+
             if (food == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Food not found: " + item.getFoodId());
             }
@@ -69,7 +78,12 @@ public class OrderService {
                 item.setFoodName(String.valueOf(name));
             }
             if (price != null) {
-                item.setPrice(Double.parseDouble(String.valueOf(price)));
+                try {
+                    item.setPrice(Double.parseDouble(String.valueOf(price)));
+                } catch (NumberFormatException ex) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Invalid food price from Food Service for foodId: " + item.getFoodId());
+                }
             }
         }
 

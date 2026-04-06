@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -20,6 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
+	private static final Logger log = LoggerFactory.getLogger(TokenAuthenticationFilter.class);
 	private static final String AUTHORIZATION = "Authorization";
 	private static final String BEARER_PREFIX = "Bearer ";
 
@@ -45,23 +48,33 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		String authorizationHeader = request.getHeader(AUTHORIZATION);
+		log.debug("Processing authentication. method={} path={} token={}", request.getMethod(), request.getRequestURI(), authorizationHeader);
 		if (authorizationHeader == null || !authorizationHeader.startsWith(BEARER_PREFIX)) {
+			log.warn("Auth rejected: missing/invalid Authorization header. method={} path={}",
+					request.getMethod(), request.getRequestURI());
 			writeUnauthorized(response, "Missing or invalid Authorization header");
 			return;
 		}
 
 		boolean validToken;
 		try {
+			log.info("Validating bearer token. method={} path={}", request.getMethod(), request.getRequestURI());
 			validToken = userClient.validateToken(authorizationHeader);
 		} catch (Exception exception) {
+			log.error("Token validation failed due to upstream error. method={} path={} message={}",
+					request.getMethod(), request.getRequestURI(), exception.getMessage(), exception);
 			writeUnauthorized(response, "Unable to validate token");
 			return;
 		}
 
 		if (!validToken) {
+			log.warn("Token validation result: invalid token. method={} path={}",
+					request.getMethod(), request.getRequestURI());
 			writeUnauthorized(response, "Token is invalid");
 			return;
 		}
+
+		log.info("Token validated successfully. method={} path={}", request.getMethod(), request.getRequestURI());
 
 		UsernamePasswordAuthenticationToken authenticationToken =
 				new UsernamePasswordAuthenticationToken("authenticated-user", null, Collections.emptyList());

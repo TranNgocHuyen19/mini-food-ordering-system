@@ -1,49 +1,31 @@
 package com.daothimylinh.demo.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.Map;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
-@Component
-public class FoodClient {
-    private final RestTemplate restTemplate;
-    private final String foodServiceUrl;
+@FeignClient(name = "foodClient", url = "${app.food-service.url}")
+public interface FoodClient {
 
-    @Autowired
-    public FoodClient(RestTemplate restTemplate, @Value("${app.food-service.url}") String foodServiceUrl) {
-        this.restTemplate = restTemplate;
-        this.foodServiceUrl = foodServiceUrl;
-    }
+	@GetMapping("/api/foods/{foodId}")
+	Map<String, Object> getFoodByIdRaw(@PathVariable("foodId") Long foodId);
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getFoodById(Long foodId) {
-        try {
-            // Food service contract: GET /api/foods/{id} -> { success, message, data, timestamp }
-            Map<String, Object> response = restTemplate.getForObject(
-                    foodServiceUrl + "/api/foods/" + foodId,
-                    Map.class
-            );
+	@SuppressWarnings("unchecked")
+	default Map<String, Object> getFoodById(Long foodId) {
+		Map<String, Object> response = getFoodByIdRaw(foodId);
+		if (response == null) {
+			return null;
+		}
 
-            if (response == null) {
-                return null;
-            }
+		Object data = response.get("data");
+		if (data instanceof Map<?, ?> dataMap) {
+			return (Map<String, Object>) dataMap;
+		}
 
-            Object data = response.get("data");
-            if (data instanceof Map<?, ?> dataMap) {
-                return (Map<String, Object>) dataMap;
-            }
-
-            // Fallback for non-wrapped payloads
-            if (response.get("id") != null) {
-                return response;
-            }
-            return null;
-        } catch (HttpClientErrorException.NotFound ex) {
-            return null;
-        }
-    }
+		if (response.get("id") != null) {
+			return response;
+		}
+		return null;
+	}
 }
