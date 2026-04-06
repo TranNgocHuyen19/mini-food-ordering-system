@@ -3,6 +3,7 @@ package com.iuh.fit.food_service.controller;
 import com.iuh.fit.food_service.dto.ApiResponse;
 import com.iuh.fit.food_service.model.Food;
 import com.iuh.fit.food_service.service.FoodService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/foods")
+@RequestMapping("/api/foods")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class FoodController {
     
-    @Autowired
-    private FoodService foodService;
+    private final FoodService foodService;
     
     @GetMapping
     public ResponseEntity<ApiResponse<List<Food>>> getAllFoods() {
@@ -44,7 +45,7 @@ public class FoodController {
         }
     }
     
-    @PutMapping("/{id}")
+    @PutMapping("/edit/{id}")
     public ResponseEntity<ApiResponse<Food>> updateFood(@PathVariable Long id, @RequestBody Food food) {
         try {
             Food updatedFood = foodService.updateFood(id, food);
@@ -55,7 +56,7 @@ public class FoodController {
         }
     }
     
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable Long id) {
         try {
             foodService.deleteFood(id);
@@ -84,7 +85,7 @@ public class FoodController {
     }
     
     
-    @PatchMapping("/{id}/quantity")
+    @PatchMapping("/edit/{id}/quantity")
     public ResponseEntity<ApiResponse<Food>> updateQuantity(@PathVariable Long id, @RequestParam Integer quantity) {
         try {
             Food updatedFood = foodService.updateQuantity(id, quantity);
