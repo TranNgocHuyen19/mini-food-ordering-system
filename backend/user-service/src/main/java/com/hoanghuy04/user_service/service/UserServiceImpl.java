@@ -29,12 +29,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Passwords do not match");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
         }
 
         User user = User.builder()
-                .username(request.getUsername())
+                .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER) // Default role
                 .build();
@@ -48,11 +52,11 @@ public class UserServiceImpl implements UserService {
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
+                        request.getEmail(),
                         request.getPassword()
                 )
         );
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         String jwtToken = jwtUtil.generateToken(new CustomUserDetails(user));
         return new AuthResponse(jwtToken);
@@ -63,7 +67,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll().stream()
                 .map(user -> UserResponse.builder()
                         .id(user.getId())
-                        .username(user.getUsername())
+                        .email(user.getEmail())
                         .role(user.getRole())
                         .build())
                 .collect(Collectors.toList());
@@ -71,12 +75,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getCurrentUser() {
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByUsername(username)
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Current user not found"));
         return UserResponse.builder()
                 .id(user.getId())
-                .username(user.getUsername())
+                .email(user.getEmail())
                 .role(user.getRole())
                 .build();
     }

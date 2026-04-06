@@ -23,7 +23,7 @@ public class UserController {
     private final CookieUtil cookieUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request,
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@jakarta.validation.Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         AuthResponse authResponse = userService.register(request);
         cookieUtil.createCookie(response, "jwtToken", authResponse.getToken(), 86400);
@@ -31,7 +31,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request,
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@jakarta.validation.Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
         AuthResponse authResponse = userService.login(request);
         cookieUtil.createCookie(response, "jwtToken", authResponse.getToken(), 86400);
