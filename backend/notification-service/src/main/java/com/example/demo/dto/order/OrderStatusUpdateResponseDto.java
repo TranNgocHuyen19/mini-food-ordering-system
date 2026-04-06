@@ -1,4 +1,6 @@
 package com.example.demo.dto.order;
 
-public record OrderStatusUpdateResponseDto(Long orderId, String status) {
+import com.example.demo.model.OrderStatus;
+
+public record OrderStatusUpdateResponseDto(Long orderId, OrderStatus status) {
 }
