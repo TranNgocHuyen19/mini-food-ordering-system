@@ -9,6 +9,11 @@ import com.example.demo.model.PaymentStatus;
 import com.example.demo.repository.PaymentRepository;
 import java.util.logging.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 
 @Service
 public class PaymentService {
@@ -27,6 +32,9 @@ public class PaymentService {
 		this.notificationService = notificationService;
 	}
 
+		@CircuitBreaker(name = "default", fallbackMethod = "createPaymentFallback")
+	@Retry(name = "default", fallbackMethod = "createPaymentFallback")
+	@RateLimiter(name = "default", fallbackMethod = "createPaymentFallback")
 	public PaymentResponseDto createPayment(PaymentRequestDto request) {
 		Payment payment = new Payment();
 		payment.setOrderId(request.orderId());
@@ -35,20 +43,17 @@ public class PaymentService {
 		payment.setStatus(PaymentStatus.PENDING);
 		payment = paymentRepository.save(payment);
 
-		try {
-			orderServiceClient.updateOrderStatus(request.orderId(), OrderStatus.COMPLETED);
-		} catch (Exception exception) {
-			logger.warning(() -> String.format(
-					"Failed to update order status for order #%d: %s",
-					request.orderId(),
-					exception.getMessage()));
-		}
+		orderServiceClient.updateOrderStatus(request.orderId(), OrderStatus.COMPLETED);
 
 		String notificationMessage = notificationService.sendPaymentSuccessNotification(request);
 		payment.setStatus(PaymentStatus.COMPLETED);
 		payment = paymentRepository.save(payment);
 		logger.info(notificationMessage);
 		return toResponse(payment);
+	}
+
+	public PaymentResponseDto createPaymentFallback(PaymentRequestDto request, Throwable t) {
+		throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Dependent services are currently down, please try again later. Reason: " + t.getMessage());
 	}
 
 	private PaymentResponseDto toResponse(Payment payment) {

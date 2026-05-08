@@ -12,6 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 
 @Service
 public class OrderService {
@@ -30,6 +33,9 @@ public class OrderService {
         return orderRepository.findAll();
     }
 
+    @CircuitBreaker(name = "default", fallbackMethod = "createOrderFallback")
+    @Retry(name = "default", fallbackMethod = "createOrderFallback")
+    @RateLimiter(name = "default", fallbackMethod = "createOrderFallback")
     public Order createOrder(Order order, String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing Authorization header");
@@ -95,6 +101,11 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
+
+    public Order createOrderFallback(Order order, String authorizationHeader, Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Dependent services are currently down, please try again later. Reason: " + t.getMessage());
+    }
+
 
     public Order updateOrderStatus(Long id, OrderStatus status) {
         return orderRepository.findById(id)

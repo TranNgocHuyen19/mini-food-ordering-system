@@ -14,6 +14,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +33,9 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
 
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "authFallback")
+    @Retry(name = "default", fallbackMethod = "authFallback")
+    @RateLimiter(name = "default", fallbackMethod = "authFallback")
     public AuthResponse register(RegisterRequest request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
@@ -49,6 +57,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "authFallback")
+    @Retry(name = "default", fallbackMethod = "authFallback")
+    @RateLimiter(name = "default", fallbackMethod = "authFallback")
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -74,6 +85,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "userFallback")
+    @Retry(name = "default", fallbackMethod = "userFallback")
+    @RateLimiter(name = "default", fallbackMethod = "userFallback")
     public UserResponse getCurrentUser() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
@@ -83,5 +97,13 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    public AuthResponse authFallback(Object request, Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "User Service is currently unavailable, please try again later. Reason: " + t.getMessage());
+    }
+
+    public UserResponse userFallback(Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "User Service is currently unavailable, please try again later. Reason: " + t.getMessage());
     }
 }

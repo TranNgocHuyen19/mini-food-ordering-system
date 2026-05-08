@@ -4,6 +4,11 @@ import com.iuh.fit.food_service.model.Food;
 import com.iuh.fit.food_service.repository.FoodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,21 +19,33 @@ public class FoodServiceImpl implements FoodService {
     private FoodRepository foodRepository;
     
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "foodListFallback")
+    @Retry(name = "default", fallbackMethod = "foodListFallback")
+    @RateLimiter(name = "default", fallbackMethod = "foodListFallback")
     public List<Food> getAllFoods() {
         return foodRepository.findAll();
     }
     
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "foodListFallback")
+    @Retry(name = "default", fallbackMethod = "foodListFallback")
+    @RateLimiter(name = "default", fallbackMethod = "foodListFallback")
     public List<Food> getFoodsByCategory(String category) {
         return foodRepository.findByCategory(category);
     }
     
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "optionalFoodFallback")
+    @Retry(name = "default", fallbackMethod = "optionalFoodFallback")
+    @RateLimiter(name = "default", fallbackMethod = "optionalFoodFallback")
     public Optional<Food> getFoodById(Long id) {
         return foodRepository.findById(id);
     }
     
     @Override
+    @CircuitBreaker(name = "default", fallbackMethod = "foodFallback")
+    @Retry(name = "default", fallbackMethod = "foodFallback")
+    @RateLimiter(name = "default", fallbackMethod = "foodFallback")
     public Food createFood(Food food) {
         return foodRepository.save(food);
     }
@@ -86,5 +103,21 @@ public class FoodServiceImpl implements FoodService {
         return foodRepository.findById(id)
             .map(food -> food.getQuantity() >= requiredQuantity)
             .orElse(false);
+    }
+
+    public List<Food> foodListFallback(Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Food Service is currently unavailable. Reason: " + t.getMessage());
+    }
+
+    public List<Food> foodListFallback(String category, Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Food Service is currently unavailable. Reason: " + t.getMessage());
+    }
+
+    public Optional<Food> optionalFoodFallback(Long id, Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Food Service is currently unavailable. Reason: " + t.getMessage());
+    }
+
+    public Food foodFallback(Food food, Throwable t) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Food Service is currently unavailable. Reason: " + t.getMessage());
     }
 }
